@@ -1,0 +1,46 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project
+
+**Bitácora de Algoritmos** (renamed from "StackLab" — don't reintroduce the old name) — a Spanish-language educational platform for simulating algorithms and data structures. Curriculum (see `HomeView.tsx`'s `CATEGORIES`, numbered 1-7): Fundamentos de Algoritmos y TDA (pending), Listas Enlazadas, Pilas, Colas, Tablas Hash, Árboles Binarios (pending), Grafos (pending) — tree/graph traversals are folded into the Árboles/Grafos modules rather than being their own module. Pure client-side React app scaffolded via Google AI Studio; no backend.
+
+A running project journal (why decisions were made, what's done/pending) is kept in Obsidian at [Notas/Desarrollo.md](Notas/Desarrollo.md) — this repo root doubles as the Obsidian vault (there's a `.obsidian/` folder). Update that note, not just this file, after notable feature work.
+
+## Commands
+
+```bash
+npm install       # install dependencies
+npm run dev       # start Vite dev server on port 3000 (0.0.0.0)
+npm run build     # production build via vite build
+npm run preview   # preview the production build
+```
+
+There is no test suite or linter configured. `tsconfig.json` has `noEmit: true` — TypeScript is used for editor/type checking only; run `npx tsc --noEmit` manually to type-check.
+
+## Architecture
+
+- **Home + module screen, no router.** [src/App.tsx](src/App.tsx) holds `activeModule: ModuleId` (defined in [src/types.ts](src/types.ts)), defaulting to `'inicio'`. When `'inicio'`, it renders [src/views/HomeView.tsx](src/views/HomeView.tsx) — a card grid (grouped by category, numbered to match the curriculum) that lets the student pick a module, including disabled "Próximamente" cards for modules not built yet (Fundamentos, Árboles, Grafos, Complejidad). Any other value renders the matching view. `resetKey` is bumped to force-remount the active view (via `key=`) and reset all local state when the user hits the global reset button in the header. [src/components/Header.tsx](src/components/Header.tsx) is a simplified bar (logo/Inicio button/breadcrumb/reset) — it no longer contains tab navigation.
+- **One data structure = one topic screen, with a game embedded at the bottom.** Pilas and Colas are deliberately **separate** modules ([PilasView.tsx](src/views/PilasView.tsx), [ColasView.tsx](src/views/ColasView.tsx)) — the user explicitly did not want them sharing a screen (there used to be a single `StackQueueTheoryView`, now deleted). Each topic view follows: header → command bar → simulator+code grid → operation log → **an embedded mini-game reinforcing the same structure** → `TheoryCards` ("repaso") at the very end. Pilas embeds `HanoiSimulatorView` (Towers of Hanoi = LIFO puzzle); Colas embeds `HotPotatoGame.tsx` (Papa Caliente = FIFO rotate-and-eliminate game, built from scratch, same step-engine pattern as `LinkedListView`). Only one `TheoryCards` block per page — child components like `HanoiSimulatorView` do **not** render their own theory section when embedded, so theory never appears mid-page.
+- **Views are self-contained.** Each file under `src/views/` (`HanoiSimulatorView`, `RecursiveCallstackView`, `PilasView`, `ColasView`, `HotPotatoGame`, `LinkedListView`, `HashTableView`, `ChallengesView`, `HomeView`) owns all of its own state, simulation logic, and markup — there is no shared state management (no context/store). Shared pieces: types in `src/types.ts`, the `Header`/`Footer` chrome, and the 3 reusable teaching components below.
+- **Reusable "teach a concept" building blocks** in `src/components/`, extracted so every module can follow the same "visual simulator + synced Python code + theory" pattern the user asked for:
+  - `PythonCodePanel.tsx` — editor-styled code viewer with line numbers, an `activeLine` highlight, and a `caption` prop: a plain-language "Ahora: …" sentence rendered prominently above the code (from the current step's `logText`) so the student's focus lands on *what the highlighted line is doing*, not just that a line is highlighted. Every module that shows code passes both `activeLine` and `caption` together. Also takes `tone="error"` to render the caption + active line in red — use for guard/underflow branches. **Buttons that trigger a guard branch (e.g. `pop()`/`peek()` on an empty structure) must stay enabled when empty** — disabling them on the empty case hides the exact code path (`if len(...) == 0: ...`) the student most needs to see; only gate on an in-flight animation (`isBusy`), never on emptiness, for any operation whose empty-guard is shown in the code panel.
+  - `OperationLogPanel.tsx` — scrolling operation-log terminal driven by `LogEntry[]` (secondary/history view; the `caption` in `PythonCodePanel` is the primary "what's happening now" signal).
+  - `TheoryCards.tsx` — bottom-of-page grid of theory/complexity cards.
+  - `src/constants/palette.ts` — `getSwatch(index)` returns the shared disk/node color palette (same colors as Torres de Hanói's disks) so Pilas, Listas Enlazadas, and future modules read as one visual family instead of flat gray boxes.
+- **Design language: clean, not a debugger.** Modules were deliberately decluttered from an earlier "terminal/debugger" look (many nested bordered boxes, badge rows, decorative pills) to a flatter one: a short title + one-line subtitle, a single-row toolbar (no heavy bordered "deck"), a 2-column `grid lg:grid-cols-12` of *visual simulator (7 cols) | PythonCodePanel with caption (5 cols)*, and `TheoryCards` full-width at the bottom. When adding a module or touching an existing one, match this — favor plain text over bordered/pilled badges, and don't reintroduce a redundant status pill once `PythonCodePanel`'s caption already says what's happening.
+- **Simulations are hand-rolled step engines, not generic.** Two flavors exist:
+  - `HanoiSimulatorView`: a recursive move-generator (`generateHanoiMoves`) pre-computes a queue of moves, then a `setTimeout` loop (`runNextSolveStep`) animates them; manual play (click a tower to pop, click another to push) reuses the same `executeMove` validated against LIFO/Hanoi rules.
+  - `LinkedListView`: each operation (`insertar_al_inicio`, `buscar`, etc.) is a pure function that returns a full array of `SimStep` snapshots (node array + staged node + pointer tags + Python line + log text, per micro-step) — see `buildInsertHeadSteps` and friends. The component just walks that array with Play/Pause/Step/Speed controls (`runOperation`/`advance`/`handleManualStep`), never mutating list state directly mid-animation.
+  - `HashTableView`: same step-snapshot pattern applied to a chaining hash table (`class TablaHash` in Python) — `buildInsertSteps`/`buildSearchSteps`/`buildDeleteSteps` each compute the bucket index, then emit one step per entry scanned in that bucket's collision chain (mirrors `LinkedListView`'s "compare each node" pattern, applied to a bucket instead of a list). Seeded with a deliberate collision (`"cat"` and `"act"`, anagrams, same `sum(ord(...))`) so the first thing a student sees is two keys sharing a bucket.
+  - **This is the template to copy** when building the next module (Árboles, Grafos, Complejidad/Ordenamientos): write pure `build*Steps()` functions producing a snapshot array, then reuse the same play/pause/step engine and the 3 shared components above.
+- **Styling:** Tailwind v4 (`@import "tailwindcss"` in `src/index.css`, via the `@tailwindcss/vite` plugin in `vite.config.ts`) with a Material Design 3–style token palette in an `@theme` block (`--color-surface`, `--color-primary`, etc.). In practice, most components do **not** use those semantic tokens — they hardcode arbitrary-value Tailwind classes like `bg-[#0f131d]` and `text-[#4cd7f6]` directly, matching the same hex palette. When editing UI, match the existing hardcoded-hex convention already used in that file rather than introducing the semantic tokens (or reconcile them intentionally, not incidentally).
+- **Icons:** all icons come from `lucide-react`.
+- **Language:** all UI copy, comments-in-code-templates, and simulated log/console output are in Spanish; keep new user-facing strings consistent with that.
+- **Interactivity bar:** modules are expected to be *very* interactive — combine free-form student input (value/index fields, not just a fixed demo) with step-level control (Play/Pause/Step/Speed, as in `HanoiSimulatorView` and `LinkedListView`), and keep the drawing, the active Python line, and a plain-language log entry in sync on every micro-step. For anything involving comparisons (search, sorting), show a live counter (comparisons/swaps) to connect the simulation to its Big-O complexity.
+- **Env:** `vite.config.ts` wires `GEMINI_API_KEY` from `.env.local` into `process.env.API_KEY`/`process.env.GEMINI_API_KEY` at build time, per the AI Studio template convention — no code in `src/` currently reads either variable.
+
+## Dev server note
+
+If `npm run dev` is already running in another terminal and you change `vite.config.ts` (plugins) or `package.json` (deps), **restart it** — Vite does not hot-reload plugin/config changes, so a stale process will serve unstyled (no Tailwind) or broken output even though the code on disk is correct.
