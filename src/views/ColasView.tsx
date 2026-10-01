@@ -119,7 +119,7 @@ export const ColasView: React.FC = () => {
 
   const handleEnqueue = (val?: string) => {
     if (isQueueBusy) return;
-    const itemVal = (val !== undefined ? val : queueInput).trim() || `Turno_${queueItems.length + 1}`;
+    const itemVal = (val !== undefined ? val : queueInput).trim() || `Cliente_${queueItems.length + 1}`;
 
     setQueueActiveLine(6);
 

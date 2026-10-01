@@ -126,7 +126,7 @@ export const PilasView: React.FC = () => {
 
   const handlePush = (val?: string) => {
     if (isStackBusy) return;
-    const itemVal = (val !== undefined ? val : stackInput).trim() || `Elem_${stackItems.length + 1}`;
+    const itemVal = (val !== undefined ? val : stackInput).trim() || `Token_${stackItems.length + 1}`;
 
     setStackActiveLine(6);
 
