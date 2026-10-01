@@ -1,7 +1,7 @@
 ---
 tags: [bitacora-de-algoritmos, proyecto, educacion]
 creado: 2026-09-28
-actualizado: 2026-09-30
+actualizado: 2026-10-01
 ---
 
 # Bitácora de Algoritmos — Notas de Desarrollo
@@ -12,15 +12,17 @@ Plataforma educativa para enseñar algoritmos y estructuras de datos, construida
 
 Repositorio: `C:\xampp\htdocs\simulador`
 
-## Temario (7 unidades)
+## Temario (7 unidades) — ¡completo!
 
-1. Fundamentos de Algoritmos y Tipos de Datos Abstractos — 🚧 pendiente
+1. Fundamentos de Algoritmos y Tipos de Datos Abstractos — ✅ hecho
 2. Listas Enlazadas — ✅ hecho
 3. Pilas y Colas — ✅ hecho (pantallas separadas)
 4. Tablas Hash (Hashing) — ✅ hecho
-5. Árboles Binarios — 🚧 pendiente
-6. Recorridos de Árboles y Grafos Básicos — 🚧 se integrará dentro de los módulos de Árboles (5) y Grafos (7), no como módulo aparte
-7. Grafos: Representación y Recorridos — 🚧 pendiente
+5. Árboles Binarios — ✅ hecho
+6. Recorridos de Árboles y Grafos Básicos — ✅ integrado dentro de los módulos de Árboles (5, recorridos inorder/preorder/postorder) y Grafos (7, BFS/DFS), no como módulo aparte
+7. Grafos: Representación y Recorridos — ✅ hecho
+
+Solo queda pendiente **Complejidad de Algoritmos / Ordenamientos**, que no era parte del temario original de 7 unidades pero quedó como extra sugerido.
 
 ## Idea pedagógica central
 
@@ -48,10 +50,17 @@ Diseño deliberadamente limpio: sin badges ni cajas decorativas de más — la i
 - [x] **Tablas Hash** (nuevo, `HashTableView.tsx`) — `class TablaHash` con encadenamiento (chaining); ejemplo pre-cargado con una colisión real ("cat" y "act" caen en la misma cubeta) para que se vea de inmediato qué es una colisión.
 - [x] **Recursión & Call Stack** — header simplificado.
 - [x] Rediseño "limpio" aplicado a toda la interfaz (menos badges, más foco en el código, teoría siempre al final), verificado responsive en 375px (mobile) sin overflow horizontal.
-- [ ] **Fundamentos de Algoritmos y TDA** — pendiente (tarjeta "Próximamente").
-- [ ] **Árboles Binarios** (con sus recorridos) — pendiente (tarjeta "Próximamente").
-- [ ] **Grafos** (representación + recorridos BFS/DFS) — pendiente (tarjeta "Próximamente").
-- [ ] **Complejidad de Algoritmos / Ordenamientos** — pendiente. Se construirá como visualizador de Burbuja/Selección/Inserción con contador de comparaciones e intercambios (mismo patrón que Listas Enlazadas).
+- [x] **Consistencia de términos**: el nombre de ejemplo (seed) y el nombre que se autogenera al agregar sin escribir valor ahora usan la MISMA palabra en cada módulo — Pilas usa "Token_N" en ambos casos (antes el fallback decía "Elem_N"), Colas usa "Cliente_N" en ambos (antes decía "Turno_N").
+- [x] **Desafíos (quiz) ampliado a los 8 temas**: 15 preguntas en total — Fundamentos (2), Pilas (1), Colas (1), Torres de Hanói (1), Recursión (2), Listas Enlazadas (2), Tablas Hash (2), Árboles Binarios (2), Grafos (2).
+- [x] **Fundamentos de Algoritmos y TDA** (nuevo, `FundamentosView.tsx`) — características de un algoritmo, qué es un TDA (con Pila como ejemplo concreto), y un explorador interactivo de Big-O (slider de n, barras en escala log, código de ejemplo por clase de complejidad ligado a otros módulos: O(1)=push, O(n)=buscar en lista enlazada, O(2ⁿ)=Torres de Hanói).
+- [x] **Árboles Binarios** (nuevo, `ArbolesView.tsx`) — BST inmutable renderizado en SVG, insertar/buscar/recorridos (inorder/preorder/postorder), semilla con 7 valores.
+- [x] **Grafos** (nuevo, `GrafosView.tsx`) — grafo fijo de 6 nodos, BFS (usa arreglo como cola) y DFS (usa arreglo como pila) — el texto de log conecta explícitamente con Colas y Pilas.
+- [ ] **Complejidad de Algoritmos / Ordenamientos** — pendiente (no es parte del temario de 7 unidades, quedó como extra). Se construirá como visualizador de Burbuja/Selección/Inserción con contador de comparaciones e intercambios (mismo patrón que Listas Enlazadas).
+
+## Estado actual (2026-10-01)
+
+- [x] **Tarjetas rediseñadas para que motiven, no solo informen** (nuevo componente `TopicCard.tsx`): fondo con degradado, ícono grande con glow, y un llamado a la acción visible ("Simular ahora →" / "Depurar ahora →" / "Evaluarme ahora →") en vez de solo una flechita. Usa el mismo vocabulario de 3 colores que `TheoryCards` (`primary`/`secondary`/`tertiary`) para que toda la app comparta el mismo sistema de temas. Aplicado tanto en Inicio como en Desafíos.
+- [x] **Desafíos ahora es por tema, con tarjetas propias** (el profesor aclaró que no quería una sola lista larga de 15 preguntas, sino una tarjeta por tema y una evaluación independiente por cada una). Flujo: pantalla 1 = grid de 9 tarjetas (una por `QuizCategory`), cada una muestra cuántas preguntas tiene y, si ya se respondió, su puntaje (ej. "2/2"); al hacer clic entra a la evaluación de SOLO ese tema, con su propio puntaje, botón "Reiniciar" y botón "← Volver a los temas". El progreso de todos los temas se conserva en memoria mientras no se recargue la página (no hay backend ni localStorage).
 
 ## Decisiones importantes
 
@@ -83,6 +92,8 @@ Diseño deliberadamente limpio: sin badges ni cajas decorativas de más — la i
 
 - **Pop/Peek/Dequeue nunca se deshabilitan por estar vacío**: antes esos botones se apagaban cuando la pila/cola estaba vacía, así que el alumno nunca veía ejecutarse el `if len(self.elementos) == 0` del código. Ahora el botón sigue activo (solo se bloquea mientras hay una animación en curso) para que SIEMPRE haya seguimiento en pantalla: línea resaltada, caption y mensaje, incluso en el caso vacío. `PythonCodePanel` ahora acepta `tone="error"` para pintar ese caso en rojo (línea + caption) y distinguirlo de una operación exitosa. Aplicar el mismo criterio a cualquier módulo nuevo: si el código tiene una rama de guardia/error, el botón que la dispara no debería deshabilitarse solo porque "no habría nada que hacer" — esa rama ES lo que hay que mostrar.
 
+- **`TopicCard` es el componente a reutilizar** para cualquier "elige uno de varios" (ya lo usan Inicio y Desafíos) — no copiar/pegar el markup de una tarjeta a mano otra vez. Toma un `theme: 'primary'|'secondary'|'tertiary'`, no colores sueltos, para que cualquier pantalla nueva encaje visualmente sin tener que inventar un color nuevo.
+
 ## Notas técnicas rápidas
 
 - `npm run dev` levanta todo en `http://localhost:3000`.
@@ -91,9 +102,7 @@ Diseño deliberadamente limpio: sin badges ni cajas decorativas de más — la i
 
 ## Próximos pasos sugeridos
 
-- [ ] Construir módulo de Fundamentos de Algoritmos y TDA (más teórico: qué es un algoritmo, qué es un TDA, intro a Big-O).
-- [ ] Construir módulo de Árboles Binarios (inserción BST + recorridos inorder/preorder/postorder).
-- [ ] Construir módulo de Grafos (lista/matriz de adyacencia + BFS/DFS) — incluye los "recorridos de grafos básicos" del temario.
-- [ ] Construir módulo de Ordenamientos/Complejidad.
+- [ ] Construir módulo de Ordenamientos/Complejidad (Burbuja/Selección/Inserción con contador de comparaciones e intercambios).
 - [ ] Revisar si Recursión & Call Stack necesita el mismo nivel de rediseño que los demás.
-- [ ] Cuando haya repo de GitHub, hacer `git push` (por ahora solo hay commits locales).
+- [ ] Considerar si Árboles/Grafos también deberían tener un "juego" embebido, como Pilas (Hanói) y Colas (Papa Caliente) — no se pidió explícitamente, se dejaron sin juego para poder cubrir los 3 módulos nuevos en una sola sesión.
+- [ ] Cuando haya repo de GitHub, hacer `git push` (por ahora solo hay commits locales — el primer commit se hizo el 2026-09-28; hay cambios nuevos desde entonces sin commitear, esperando que el profesor lo pida explícitamente).
