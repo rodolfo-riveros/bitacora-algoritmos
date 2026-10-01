@@ -13,6 +13,9 @@ import { PilasView } from './views/PilasView';
 import { ColasView } from './views/ColasView';
 import { LinkedListView } from './views/LinkedListView';
 import { HashTableView } from './views/HashTableView';
+import { FundamentosView } from './views/FundamentosView';
+import { ArbolesView } from './views/ArbolesView';
+import { GrafosView } from './views/GrafosView';
 import { ChallengesView } from './views/ChallengesView';
 
 const MODULE_TITLES: Record<ModuleId, string> = {
@@ -69,6 +72,18 @@ export default function App() {
 
         {activeModule === 'tablas-hash' && (
           <HashTableView key={`hash-${resetKey}`} />
+        )}
+
+        {activeModule === 'fundamentos' && (
+          <FundamentosView key={`fundamentos-${resetKey}`} />
+        )}
+
+        {activeModule === 'arboles' && (
+          <ArbolesView key={`arboles-${resetKey}`} />
+        )}
+
+        {activeModule === 'grafos' && (
+          <GrafosView key={`grafos-${resetKey}`} />
         )}
 
         {activeModule === 'desafios' && (
